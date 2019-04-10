@@ -1,5 +1,5 @@
 ---
-title: "EDA of HW1 result"
+title: "Some Visualization of HW1 result"
 author: "Micc"
 date: "2019年4月1日"
 output: html_document
