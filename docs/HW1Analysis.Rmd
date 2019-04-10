@@ -1,0 +1,139 @@
+---
+title: "EDA of HW1 result"
+author: "Micc"
+date: "2019年4月1日"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+In this report, I made some visualization from the data, showing some fun facts.
+
+## Get started
+
+#### Loading library
+```{r libs, message=FALSE}
+library(tidyverse)
+library(magrittr)
+```
+
+#### Imorting data and preprocessing
+```{r import}
+# import data
+df <- read.csv("export_replaced.csv", fileEncoding = "UTF-8", stringsAsFactors = F) %>%
+    select(c("Username", "TotalXp", "NumExercisesCompleted", "NumCoursesCompleted", "CompletedCourses")) %>%
+    replace_na(list(CompletedCourses = ""))
+```
+
+```{r preprocess}
+# preprocess
+df %<>%
+    replace_na(list(CompletedCourses = "")) %>%
+    mutate(CompletedCourses=strsplit(CompletedCourses, split=", "))
+```
+
+#### Have a look on the dataset
+```{r view}
+head(df)
+str(df)
+```
+
+## Analysis
+
+#### Tidy up the columns
+To make visualization better, we need to tidy up the data, first we find out who has finished HW1.
+```{r}
+df %<>%
+    mutate(Passed = TotalXp >= 10000)
+
+head(df)
+```
+
+And since the column "CoursesFinished" is too messy to visualize, we need to change it's format.
+```{r}
+# find unique names
+courseNames = df$CompletedCourses %>%
+    unlist %>%
+    unique
+
+# create new columns in value of boolean
+for(name in courseNames){
+    df[, name] = sapply(df$CompletedCourses, function(x) is.element(name, x))
+}
+
+df = select(df, -c("CompletedCourses"))
+
+head(df)
+```
+
+## Visualizations
+
+#### Courses finished count
+```{r}
+# Count CoursesFinished
+df[,courseNames] %>%
+    colSums %>%
+    data.frame(key=names(.), value=.) %>%
+    ggplot(aes(key, value)) +
+    geom_bar(stat="identity") +
+    geom_text(aes(label=courseNames), position=position_dodge(width=0.9), hjust=-0.1, angle = 90) +
+    theme(axis.title.x=element_blank(),
+          axis.text.x=element_blank(),
+          axis.ticks.x=element_blank())
+
+# beautify
+df[,courseNames] %>%
+    colSums %>%
+    sort(decreasing=T) %>%
+    data.frame(key=names(.), value=.) %>%
+    filter(value > 5) %>%
+    ggplot(aes(reorder(key, -value), value, fill=reorder(key, -value))) +
+    geom_bar(stat="identity") +
+    theme(axis.title.x=element_blank()) +
+    ylab("人數") +
+    guides(fill=guide_legend(title="課程名稱"))
+```
+
+#### Who finished it twice?
+```{r}
+# finished "Introduction to R" in two language
+both = df %>%
+    filter(`Introduction to R` == T, `R 語言導論`==T) %>%
+    nrow
+
+# finished "Introduction to R" in CH
+inCH = sum(df[,"R 語言導論"])
+
+# finished "Introduction to R" in EN
+inEN = sum(df[,"Introduction to R"])
+
+# visualize
+data.frame(count= c(both, inCH, inEN), item=factor(c("both", "CH", "EN"))) %>%
+    ggplot(aes(x=item, y=count, fill=item)) +
+    geom_bar(stat="identity")
+```
+
+#### Histogram of TotalXp
+```{r}
+# TotalXP
+df %>%
+    mutate(TotalXp = TotalXp+1) %>% # 剛好10000分的人會被算在線的左邊
+    ggplot(aes(TotalXp, fill=Passed)) +
+    geom_histogram(binwidth=4000) +
+    geom_vline(aes(xintercept=10000),
+               color="black", linetype="dashed", size=0.5)
+
+# boxplot
+ggplot(df, aes(y=TotalXp)) + 
+    geom_boxplot()
+```
+
+#### Scatter plot: "TotalXp" over "NumCoursesCompleted
+```{r}
+df %>%
+    ggplot(aes(x=NumCoursesCompleted, y=TotalXp)) +
+    geom_point(aes(col=Passed), position=position_jitter(width=.05)) +
+    geom_smooth(method='lm',formula=y~x, se=F)
+```
