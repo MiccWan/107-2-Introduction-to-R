@@ -1,0 +1,80 @@
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## 延伸分析：假日或平日的遊玩人數和過關率
+
+```{r}
+# load packages
+library(readr)
+library(tidyr)
+library(dplyr)
+library(ggplot2)
+```
+
+```{r}
+# import data
+data <- read_csv("candy_crush.csv")
+```
+
+
+### 分辨平日或假日
+
+
+```{r}
+is.weekend <- function(x){
+    weekdays(x) %in% c("星期六", "星期日" )
+}
+
+df = data %>%
+    group_by(dt) %>%
+    summarise(attempts = sum(num_attempts), wins = sum(num_success)) %>%
+    mutate(p_win = wins / attempts, isWeekend=is.weekend(dt))
+
+df
+```
+
+### 計算每日的 attempts & wins & p_win，分別劃出折線圖，平日假日的點用不同顏色
+
+
+```{r}
+df %>%
+    gather(key=key, value=value, attempts, wins, p_win) %>%
+    ggplot(aes(x=dt, y=value)) +
+    geom_line(color="blue") +
+    facet_grid(rows = vars(key), scales='free_y') +
+    geom_point(aes(x=dt, y=value, col=isWeekend))
+```
+
+
+### 依照平日或假日分組計算 attempts & wins
+
+
+```{r}
+df_by_weekday <- df %>% 
+    group_by(isWeekend) %>%
+    summarize(attempts=mean(attempts), wins=mean(wins)) %>%
+    mutate(p_win=wins/attempts)
+df_by_weekday
+
+weekend = c(df_by_weekday[df_by_weekday$isWeekend == T,2:4])
+weekday = c(df_by_weekday[df_by_weekday$isWeekend == F,2:4])
+weekend
+weekday
+```
+
+
+假日與平日的嘗試次數、勝率比：
+
+
+```{r}
+attempts_ratio = weekend$attempts / weekday$attempts
+attempts_ratio
+
+win_ratio = weekend$p_win / weekday$p_win
+win_ratio
+```
+
+### 結論： 
+
+平均而言，平日的平均遊玩量比假日多出 7% ，但勝率少 10%

@@ -1,0 +1,47 @@
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## 延伸分析：可任意指定花瓣數、弧度、長度的函數
+
+```{r}
+# load packages
+library(ggplot2)
+library(dplyr)
+```
+
+## Define the Function
+
+```{r func}
+drawFlower <- function(pieces=8, ptsPerPetal=20, dtheta=pi/2, color="purple", shape=1, alpha=0.5, size=8){
+    df <- data.frame()
+    for(i in 1:pieces){
+        phi = 2 * pi * i / pieces
+        dphi = dtheta / ptsPerPetal
+        ndf <- data.frame(r = 1:ptsPerPetal) %>%
+            mutate(theta = phi + dphi * r) %>%
+            mutate(x = r * cos(theta), y = r * sin(theta))
+        df <- rbind(df, ndf)
+    }
+    ggplot(df, aes(x, y)) +
+        geom_point(aes(size=size * r / ptsPerPetal),
+                   alpha=alpha,
+                   color=color,
+                   shape=shape
+        ) + theme(
+            legend.position="none",
+            axis.ticks = element_blank(),
+            panel.grid = element_blank(),
+            panel.background = element_rect(fill = "white")
+        )
+        
+}
+```
+
+### Test the function
+```{r}
+drawFlower()
+drawFlower(pieces = 4, ptsPerPetal = 100, dtheta = 1.5* pi, size = 10)
+drawFlower(pieces = 36, ptsPerPetal = 20, dtheta = pi/4, size = 20, color = "darkgreen")
+drawFlower(pieces = 48, ptsPerPetal = 40, dtheta = pi, size = 30, color = "darkgreen", alpha = .3, shape=16)
+```
