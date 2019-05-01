@@ -3,6 +3,8 @@ title: "KaggleSurvey2018"
 output: html_document
 ---
 
+# Setup
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
@@ -38,7 +40,22 @@ raw <- read_csv('multipleChoiceResponses.csv')
 head(raw)
 ```
 
-## Step #1: The first row contains the text for each response, so we need to save it separately and then remove it from the df.
+# 開始 EDA
+
+## 列出一些有趣的問題
+
+* Q2	What is your age (# years)?
+* Q3  Country
+* Q6	Select the title most similar to your current role (or most recent title if retired): - Selected Choice
+* Q23	Approximately what percent of your time at work or school is spent actively coding?
+
+* Q24	How long have you been writing code to analyze data?
+* Q25	For how many years have you used machine learning methods (at work or in school)?
+* Q26	Do you consider yourself to be a data scientist?
+* Q33	Where do you find public datasets? (Select all that apply) - Selected Choice
+
+
+## The first row contains the text for each response, so we need to save it separately and then remove it from the df.
 
 
 ```{r}
@@ -51,7 +68,9 @@ head(all)
 head(questions)
 ```
 
-## Determine if respondent is student
+## Preprocessing: isStudent?
+
+Note: The answer to Q6 reveals this.
 
 ```{r}
 all <- all %>% 
@@ -106,18 +125,9 @@ colSums(q33)
 
 #q33 %>% ggplot(aes())
 ```
+## 開始做一些實驗～
 
 ```{r}
-# Q2	What is your age (# years)?
-# Q3  Country
-# Q6	Select the title most similar to your current role (or most recent title if retired): - Selected Choice
-# Q23	Approximately what percent of your time at work or school is spent actively coding?
-
-# Q24	How long have you been writing code to analyze data?
-# Q25	For how many years have you used machine learning methods (at work or in school)?
-# Q26	Do you consider yourself to be a data scientist?
-# Q33_Part_1	Where do you find public datasets? (Select all that apply) - Selected Choice
-
 
 selectOneQuestion <- function(mydf, qu) {
   #qs = c(qu)
@@ -161,7 +171,7 @@ head(q2)
 
 ```
 
-Step #2: Take all "Other_text" columns into a separate data frame to make things easier
+## TODO; Take all "Other_text" columns into a separate data frame (to simplify handling multiple choice questions?)
 
 ```{r}
 # see: https://stackoverflow.com/questions/30189979/select-columns-of-data-table-based-on-regex
@@ -173,8 +183,6 @@ Step #2: Take all "Other_text" columns into a separate data frame to make things
 # take the first nQ questions
 nQ <-  1:4
 cols <- unlist(nQ %>% map(function(i) str_interp('Q${i}')))
-q10 <- all[, cols]
-q10
-
-ggpairs(q10, cardinality_threshold=58)
+qs <- all[, cols]
+qs
 ```
