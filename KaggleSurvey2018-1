@@ -1,0 +1,180 @@
+---
+title: "KaggleSurvey2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+# install all missing packages
+list.of.packages <- c('ggplot2', 'tidyverse', 'data.table', 'purrr', 'GGally')
+
+new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
+if(length(new.packages)) install.packages(new.packages)
+```
+
+```{r}
+# set working directory
+getwd()
+
+# load libraries
+library(tidyverse)
+library(ggplot2)
+library(GGally)
+library(data.table)
+library(purrr)
+```
+
+
+# Read data
+
+```{r}
+# see: https://www.kaggle.com/kaggle/kaggle-survey-2018#multipleChoiceResponses.csv
+raw <- read_csv('multipleChoiceResponses.csv')
+
+#glimpse(raw)
+head(raw)
+```
+
+## Step #1: The first row contains the text for each response, so we need to save it separately and then remove it from the df.
+
+
+```{r}
+#questions <- as.character(as.vector(all[1,]))
+questionsDf <- raw[1,] # as df
+questions <- t(raw[1,]) # as vector
+all <- raw[-1,]
+head(all)
+
+head(questions)
+```
+
+## Determine if respondent is student
+
+```{r}
+all <- all %>% 
+  mutate(isStudent = Q6 == 'Student')
+```
+
+## Some Utilities
+```{r}
+
+getQuestionText <- function(colName) {
+  unname(unlist(subset(questionsDf, select = c(colName))))
+}
+
+getQuestion <- function(colName) {
+  if (!(colName %in% names(questionsDf))) {
+    colName <- paste0(colName, '_Part_1')
+  }
+  q <- getQuestionText(colName)
+  parts <- unlist(strsplit(q, ' \\(Select all that apply\\) - Selected Choice - '))
+  parts[1]
+}
+
+# in case the given column is a multi-part multichoice column, select only the choice
+getQuestionChoice <- function(colName) {
+  q <- getQuestionText(colName)
+  parts <- unlist(strsplit(q, ' \\(Select all that apply\\) - Selected Choice - '))
+  parts[2]
+}
+
+# see: https://stackoverflow.com/a/42125262
+selectMultiPartQuestion <- function(qu) {
+  # vars <- paste0("^(", paste(vars, collapse="|"), ")")
+  # select(df, matches(vars))
+  tmp <- all %>% select(starts_with(qu))
+  cnames <- names(tmp)
+  tmp <- tmp[, cnames != paste0(qu, '_OTHER_TEXT')] # drop OTHER_TEXT
+  actualNames <- as.vector(na.omit(as.vector(sapply(tmp, unique))))
+  #print(actualNames)
+  colnames(tmp) <- actualNames
+  
+  # convert factors to boolean
+  #colnames(tmp) <- 
+  sapply(tmp, function(x) !is.na(x))
+}
+
+q33 <- selectMultiPartQuestion('Q33')
+
+getQuestion('Q33')
+colSums(q33)
+
+#ggpairs(q33)
+
+#q33 %>% ggplot(aes())
+```
+
+```{r}
+# Q2	What is your age (# years)?
+# Q3  Country
+# Q6	Select the title most similar to your current role (or most recent title if retired): - Selected Choice
+# Q23	Approximately what percent of your time at work or school is spent actively coding?
+
+# Q24	How long have you been writing code to analyze data?
+# Q25	For how many years have you used machine learning methods (at work or in school)?
+# Q26	Do you consider yourself to be a data scientist?
+# Q33_Part_1	Where do you find public datasets? (Select all that apply) - Selected Choice
+
+
+selectOneQuestion <- function(mydf, qu) {
+  #qs = c(qu)
+  # why use enquo? - see: https://dplyr.tidyverse.org/articles/programming.html
+  quo_qu <- enquo(qu)
+  mydf %>%
+    select(!!quo_qu) %>%
+    group_by(!!quo_qu) %>%
+    summarize(n = n()) %>%
+    arrange(desc(n))
+}
+
+q6 <- all %>%
+  select(Q6) %>%
+  group_by(Q6) %>%
+  summarize(n = n()) %>%
+  arrange(desc(n))
+
+head(q6)
+
+makeQ23 <- function(data) {
+  data %>% 
+    select(Q23) %>%
+    group_by(Q23) %>%
+    summarize(n = n()) %>%
+    arrange(desc(n))
+}
+
+q23 <- makeQ23(all)
+head(q23)
+
+
+unique(all$Q6)
+
+q23_stu <- makeQ23(all %>% filter(isStudent == T))
+head(q23_stu)
+
+q2 <- selectOneQuestion(all, Q2)
+head(q2)
+
+
+```
+
+Step #2: Take all "Other_text" columns into a separate data frame to make things easier
+
+```{r}
+# see: https://stackoverflow.com/questions/30189979/select-columns-of-data-table-based-on-regex
+# cols <- grep("bar|baz", names(all), value = TRUE)
+# noOthers <- mydt[, ..cols]
+```
+
+```{r}
+# take the first nQ questions
+nQ <-  1:4
+cols <- unlist(nQ %>% map(function(i) str_interp('Q${i}')))
+q10 <- all[, cols]
+q10
+
+ggpairs(q10, cardinality_threshold=58)
+```
