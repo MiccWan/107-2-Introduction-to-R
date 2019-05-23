@@ -16,8 +16,7 @@ if(!exists("i")){
 }
 
 for(i in from:to){
-    print(i)
-    # https://stackoverflow.com/questions?sort=frequent&page=2
+    cat("start crawling page #", i, sep="")
     tags <- paste0("https://stackoverflow.com/questions?sort=frequent&page=", i) %>%
         read_html %>%
         html_nodes("#questions .post-tag") %>%
@@ -33,4 +32,4 @@ png("wordcloud_packages.png", width=6,height=4, units='in', res=300)
 wordcloud(names(freq), freq, min.freq = 1, scale=c(4,.2), max.words=200, random.order=FALSE, colors=brewer.pal(5,"Dark2"))
 dev.off()
 
-save.images(".RData")
+save.image(".RData")

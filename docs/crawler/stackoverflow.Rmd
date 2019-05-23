@@ -48,9 +48,7 @@ head(all_tags, 40)
 ```{r eval=F}
 freq <- table(res)
 head(sort(freq, decreasing=T))
-png("wordcloud_packages.png", width=6, height=4, units='in', res=300)
 wordcloud(names(freq), freq, min.freq = 1, scale=c(4,.2), max.words=200, random.order=FALSE, colors=brewer.pal(5,"Dark2"))
-dev.off()
 ```
 
 
