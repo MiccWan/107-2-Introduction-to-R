@@ -259,7 +259,7 @@ head(all_tags, 40)</code></pre>
 </div>
 <div class="section level3">
 <h3>計算標籤出現的次數後做成文字雲</h3>
-<pre class="r"><code>freq &lt;- table(res)
+<pre class="r"><code>freq &lt;- table(all_tags)
 head(sort(freq, decreasing=T))
 wordcloud(names(freq), freq, min.freq = 1, scale=c(4,.2), max.words=200, random.order=FALSE, colors=brewer.pal(5,&quot;Dark2&quot;))</code></pre>
 <div class="figure">

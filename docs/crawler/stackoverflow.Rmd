@@ -46,7 +46,7 @@ head(all_tags, 40)
 
 ### 計算標籤出現的次數後做成文字雲
 ```{r eval=F}
-freq <- table(res)
+freq <- table(all_tags)
 head(sort(freq, decreasing=T))
 wordcloud(names(freq), freq, min.freq = 1, scale=c(4,.2), max.words=200, random.order=FALSE, colors=brewer.pal(5,"Dark2"))
 ```
