@@ -1,0 +1,59 @@
+---
+title: "stackoverflow"
+author: "Micc"
+date: "2019年5月22日"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r message=F}
+library(dplyr)
+library(rvest)
+library(wordcloud)
+```
+
+
+### 抓取整個頁面內容
+```{r}
+full_page <- read_html("https://stackoverflow.com/questions?sort=frequent&page=1")
+full_page
+```
+
+### 找出在資料在頁面中的位置後提取資料
+```{r}
+tag_nodes <- html_nodes(full_page, "#questions .post-tag")
+head(tag_nodes)
+tags <- html_text(tag_nodes)
+head(tags)
+```
+
+### 使用 for-loop 抓取多個頁面的標籤
+```{r}
+page <- 10
+all_tags <- character(0)
+for(i in 1:page){
+    tags <- paste0("https://stackoverflow.com/questions?sort=frequent&page=", i) %>%
+        read_html %>%
+        html_nodes("#questions .post-tag") %>%
+        html_text
+    all_tags <- c(all_tags, tags)
+}   
+head(all_tags, 40)
+```
+
+### 計算標籤出現的次數後做成文字雲
+```{r eval=F}
+freq <- table(res)
+head(sort(freq, decreasing=T))
+png("wordcloud_packages.png", width=6, height=4, units='in', res=300)
+wordcloud(names(freq), freq, min.freq = 1, scale=c(4,.2), max.words=200, random.order=FALSE, colors=brewer.pal(5,"Dark2"))
+dev.off()
+```
+
+
+![1000頁文字雲結果](./wordcloud_packages.png)
+
+Note: 上方程式碼僅示範爬10個頁面，最後文字雲圖片為1000個頁面的爬蟲結果
